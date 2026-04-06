@@ -163,11 +163,11 @@ function checkClass() {
     const getAgeJP = (targetY) => (m < 4 || (m === 4 && d === 1)) ? (targetY - y) : (targetY - y - 1);
     const getAgeUS = (targetY) => (m < 9) ? (targetY - y) : (targetY - y - 1);
 
-    document.getElementById('resJP26').innerText = getAgeJP(2026) + " yrs old";
-    document.getElementById('resJP27').innerText = getAgeJP(2027) + " yrs old";
-    document.getElementById('resUS25').innerText = getAgeUS(2025) + " yrs old";
-    document.getElementById('resUS26').innerText = getAgeUS(2026) + " yrs old";
-    document.getElementById('resUS27').innerText = getAgeUS(2027) + " yrs old";
+    document.getElementById('resJP26').innerText = getAgeJP(2026) + " year-old class";
+    document.getElementById('resJP27').innerText = getAgeJP(2027) + " year-old class";
+    document.getElementById('resUS25').innerText = getAgeUS(2025) + " year-old class";
+    document.getElementById('resUS26').innerText = getAgeUS(2026) + " year-old class";
+    document.getElementById('resUS27').innerText = getAgeUS(2027) + " year-old class";
 
     document.getElementById('classResultArea').style.display = 'grid';
 }
