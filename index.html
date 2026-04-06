@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Utility Dashboard v9</title>
+    <title>Global Utility Dashboard v10</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -128,6 +128,7 @@
             <select id="toCurr">
                 <option value="USD">USD (US Dollar)</option>
                 <option value="EUR">EUR (Euro)</option>
+                <option value="CAD">CAD (Canada Dollar)</option>
                 <option value="AUD">AUD (AU Dollar)</option>
                 <option value="SGD">SGD (SG Dollar)</option>
                 <option value="TWD">TWD (TW Dollar)</option>
@@ -159,17 +160,11 @@ function checkClass() {
     if(!/^\d{8}$/.test(v)) return alert("Enter 8 digits (YYYYMMDD)");
     const y=parseInt(v.slice(0,4)), m=parseInt(v.slice(4,6)), d=parseInt(v.slice(6,8));
 
-    // Japan Calculation (Apr 2nd to Apr 1st next year)
     const getAgeJP = (targetY) => (m < 4 || (m === 4 && d === 1)) ? (targetY - y) : (targetY - y - 1);
-    
-    // US Calculation (Sept 1st to Aug 31st next year)
     const getAgeUS = (targetY) => (m < 9) ? (targetY - y) : (targetY - y - 1);
 
-    // Japan Output
     document.getElementById('resJP26').innerText = getAgeJP(2026) + " yrs old";
     document.getElementById('resJP27').innerText = getAgeJP(2027) + " yrs old";
-    
-    // US Output (Added 2025)
     document.getElementById('resUS25').innerText = getAgeUS(2025) + " yrs old";
     document.getElementById('resUS26').innerText = getAgeUS(2026) + " yrs old";
     document.getElementById('resUS27').innerText = getAgeUS(2027) + " yrs old";
@@ -177,7 +172,7 @@ function checkClass() {
     document.getElementById('classResultArea').style.display = 'grid';
 }
 
-// --- Live Currency Converter ---
+// --- Live Currency Converter (With CAD Support) ---
 async function convert() {
     const amount = document.getElementById('jpy').value;
     const target = document.getElementById('toCurr').value;
@@ -196,7 +191,8 @@ async function convert() {
             document.getElementById('currLabel').innerText = `Live Rate: 1 JPY = ${rate.toFixed(4)} ${target}`;
         }
     } catch (e) {
-        const fb = {USD:0.0066, EUR:0.0062, AUD:0.010, SGD:0.0089, TWD:0.21, HKD:0.052};
+        // Fallback static rates if API fails
+        const fb = {USD:0.0066, EUR:0.0062, CAD:0.0090, AUD:0.010, SGD:0.0089, TWD:0.21, HKD:0.052};
         display.innerText = `${(amount * fb[target]).toFixed(2)} ${target} (Est)`;
     }
 }
