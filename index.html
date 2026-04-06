@@ -1,1 +1,229 @@
-# JPE.dashboard
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Utility Dashboard v7 (Live Rates)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --accent: #f59e0b;
+            --holiday: #ef4444;
+            --saturday: #2563eb;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #1e293b;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; color: #0f172a; margin-bottom: 30px; font-weight: 800; }
+        
+        section {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h2 { border-left: 5px solid var(--primary); padding-left: 15px; margin-bottom: 25px; font-size: 1.3rem; color: #334155; }
+
+        .tool-group { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        input, select {
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            flex: 1;
+            min-width: 160px;
+            outline: none;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        
+        .result-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .res-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .res-label { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        .res-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .curr-val { color: var(--accent); }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        @media (max-width: 850px) { .calendar-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 550px) { .calendar-grid { grid-template-columns: 1fr; } }
+        .month-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; }
+        .month-name { font-weight: bold; text-align: center; display: block; margin-bottom: 5px; border-bottom: 1px solid #eee; }
+        .cal-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; table-layout: fixed; }
+        .cal-table td { text-align: center; padding: 6px 0; border-radius: 4px; }
+        .sun, .hol { color: var(--holiday); font-weight: bold; background: #fff1f2; }
+        .sat { color: var(--saturday); font-weight: bold; }
+        .year-label { background: #334155; color: white; padding: 10px; border-radius: 8px; text-align: center; margin: 30px 0 15px; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Global Utility Dashboard</h1>
+
+    <section>
+        <h2>School Year Group Finder</h2>
+        <div class="tool-group">
+            <input type="text" id="bday" placeholder="Birthday (YYYYMMDD)" maxlength="8">
+            <button onclick="checkClass()">Find Class</button>
+        </div>
+        <div id="classResultArea" class="result-container">
+            <div class="res-card">
+                <div class="res-label">FY 2026</div>
+                <div id="res2026" class="res-value">-</div>
+            </div>
+            <div class="res-card">
+                <div class="res-label">FY 2027</div>
+                <div id="res2027" class="res-value">-</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Live Currency Converter (JPY Base)</h2>
+        <div class="tool-group">
+            <input type="number" id="jpy" placeholder="Amount in Yen">
+            <select id="toCurr">
+                <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="AUD">AUD (AU Dollar)</option>
+                <option value="SGD">SGD (SG Dollar)</option>
+                <option value="TWD">TWD (TW Dollar)</option>
+                <option value="HKD">HKD (HK Dollar)</option>
+            </select>
+            <button onclick="convert()">Convert</button>
+        </div>
+        <div id="currResultArea" class="result-container" style="grid-template-columns: 1fr;">
+            <div class="res-card">
+                <div id="currLabel" class="res-label">Converted Amount</div>
+                <div id="currVal" class="res-value curr-val">Please wait...</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Japan Public Holidays</h2>
+        <div class="year-label">Year: 2026</div>
+        <div id="grid2026" class="calendar-grid"></div>
+        <div class="year-label">Year: 2027</div>
+        <div id="grid2027" class="calendar-grid"></div>
+    </section>
+</div>
+
+<script>
+// --- Class Finder ---
+function checkClass() {
+    const v = document.getElementById('bday').value;
+    if(!/^\d{8}$/.test(v)) return alert("Enter 8 digits (YYYYMMDD)");
+    const y=parseInt(v.slice(0,4)), m=parseInt(v.slice(4,6)), d=parseInt(v.slice(6,8));
+    const getA = (tY) => (m < 4 || (m === 4 && d === 1)) ? (tY - y) : (tY - y - 1);
+    document.getElementById('res2026').innerText = getA(2026) + " yrs old";
+    document.getElementById('res2027').innerText = getA(2027) + " yrs old";
+    document.getElementById('classResultArea').style.display = 'grid';
+}
+
+// --- Live Currency Converter ---
+async function convert() {
+    const amount = document.getElementById('jpy').value;
+    const target = document.getElementById('toCurr').value;
+    const display = document.getElementById('currVal');
+    const area = document.getElementById('currResultArea');
+
+    if(!amount) return;
+    area.style.display = 'grid';
+    display.innerText = "Fetching live rate...";
+
+    try {
+        // Fetch from Open Source Exchange Rate API (No Key required for limited use)
+        const response = await fetch(`https://open.er-api.com/v6/latest/JPY`);
+        const data = await response.json();
+        const rate = data.rates[target];
+        
+        if (rate) {
+            const result = (amount * rate).toLocaleString(undefined, {minimumFractionDigits: 2});
+            display.innerText = `${result} ${target}`;
+            document.getElementById('currLabel').innerText = `Live Rate: 1 JPY = ${rate.toFixed(4)} ${target}`;
+        }
+    } catch (error) {
+        // Fallback to static rates if API fails
+        const fallback = {USD:0.0066, EUR:0.0062, AUD:0.010, SGD:0.0089, TWD:0.21, HKD:0.052};
+        const res = (amount * fallback[target]).toLocaleString(undefined, {minimumFractionDigits: 2});
+        display.innerText = `${res} ${target} (Estimate)`;
+        document.getElementById('currLabel').innerText = "Converted Amount (Offline Mode)";
+    }
+}
+
+// --- Holiday & Calendar Engine ---
+function getHolidays(y) {
+    let h = {}; const add = (m, d) => { h[`${m}-${d}`] = true; };
+    const getNthMon = (m, n) => {
+        let count = 0; for (let d = 1; d <= 31; d++) {
+            if (new Date(y, m - 1, d).getDay() === 1) { count++; if (count === n) return d; }
+        }
+    };
+    add(1, 1); add(2, 11); add(2, 23); add(4, 29); add(5, 3); add(5, 4); add(5, 5);
+    add(8, 11); add(11, 3); add(11, 23);
+    add(1, getNthMon(1, 2)); add(7, getNthMon(7, 3)); add(9, getNthMon(9, 3)); add(10, getNthMon(10, 2));
+    if (y === 2026) { add(3, 20); add(9, 23); add(9, 22); }
+    if (y === 2027) { add(3, 21); add(9, 23); }
+    Object.keys(h).forEach(k => {
+        let [m, d] = k.split('-').map(Number);
+        if (new Date(y, m - 1, d).getDay() === 0) {
+            let sd = d + 1; while (h[`${m}-${sd}`]) sd++; add(m, sd);
+        }
+    });
+    return Object.keys(h);
+}
+
+function draw(y, id) {
+    const t = document.getElementById(id);
+    const ms = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const hs = getHolidays(y);
+    for (let m = 0; m < 12; m++) {
+        let date = new Date(y, m, 1);
+        let html = `<div class="month-box"><span class="month-name">${ms[m]}</span><table class="cal-table"><tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr><tr>`;
+        for (let i = 0; i < date.getDay(); i++) html += '<td></td>';
+        while (date.getMonth() === m) {
+            let d = date.getDate(), dow = date.getDay();
+            let isH = hs.includes(`${m+1}-${d}`);
+            html += `<td class="${(dow === 0 || isH) ? 'hol' : (dow === 6 ? 'sat' : '')}">${d}</td>`;
+            if (dow === 6) html += '</tr><tr>';
+            date.setDate(d + 1);
+        }
+        t.innerHTML += html + '</tr></table></div>';
+    }
+}
+draw(2026, 'grid2026');
+draw(2027, 'grid2027');
+</script>
+</body>
+</html>
