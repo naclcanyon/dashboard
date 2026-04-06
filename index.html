@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Utility Dashboard v7 (Live Rates)</title>
+    <title>Global Utility Dashboard v8</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -54,7 +54,7 @@
         
         .result-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 15px;
             margin-top: 10px;
             display: none;
@@ -69,8 +69,9 @@
             border: 1px solid #e2e8f0;
             text-align: center;
         }
-        .res-label { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
-        .res-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .res-main-label { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 10px; display: block; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; }
+        .res-sub-label { font-size: 0.75rem; color: #64748b; margin-bottom: 5px; text-transform: uppercase; display: block; }
+        .res-value { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
         .curr-val { color: var(--accent); }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
@@ -98,12 +99,20 @@
         </div>
         <div id="classResultArea" class="result-container">
             <div class="res-card">
-                <div class="res-label">FY 2026</div>
-                <div id="res2026" class="res-value">-</div>
+                <span class="res-main-label">Japan</span>
+                <span class="res-sub-label">April 2026 - Mar 2027</span>
+                <div id="resJP26" class="res-value">-</div>
+                <div style="margin-top:15px"></div>
+                <span class="res-sub-label">April 2027 - Mar 2028</span>
+                <div id="resJP27" class="res-value">-</div>
             </div>
             <div class="res-card">
-                <div class="res-label">FY 2027</div>
-                <div id="res2027" class="res-value">-</div>
+                <span class="res-main-label">US</span>
+                <span class="res-sub-label">September 2026 - Aug 2027</span>
+                <div id="resUS26" class="res-value">-</div>
+                <div style="margin-top:15px"></div>
+                <span class="res-sub-label">September 2027 - Aug 2028</span>
+                <div id="resUS27" class="res-value">-</div>
             </div>
         </div>
     </section>
@@ -125,7 +134,7 @@
         <div id="currResultArea" class="result-container" style="grid-template-columns: 1fr;">
             <div class="res-card">
                 <div id="currLabel" class="res-label">Converted Amount</div>
-                <div id="currVal" class="res-value curr-val">Please wait...</div>
+                <div id="currVal" class="res-value curr-val">Calculating...</div>
             </div>
         </div>
     </section>
@@ -140,14 +149,24 @@
 </div>
 
 <script>
-// --- Class Finder ---
+// --- Class Finder Logic ---
 function checkClass() {
     const v = document.getElementById('bday').value;
     if(!/^\d{8}$/.test(v)) return alert("Enter 8 digits (YYYYMMDD)");
     const y=parseInt(v.slice(0,4)), m=parseInt(v.slice(4,6)), d=parseInt(v.slice(6,8));
-    const getA = (tY) => (m < 4 || (m === 4 && d === 1)) ? (tY - y) : (tY - y - 1);
-    document.getElementById('res2026').innerText = getA(2026) + " yrs old";
-    document.getElementById('res2027').innerText = getA(2027) + " yrs old";
+
+    // Japan Calculation (Apr 2nd to Apr 1st next year)
+    const getAgeJP = (targetY) => (m < 4 || (m === 4 && d === 1)) ? (targetY - y) : (targetY - y - 1);
+    
+    // US Calculation (Sept 1st to Aug 31st next year)
+    const getAgeUS = (targetY) => (m < 9) ? (targetY - y) : (targetY - y - 1);
+
+    document.getElementById('resJP26').innerText = getAgeJP(2026) + " yrs old";
+    document.getElementById('resJP27').innerText = getAgeJP(2027) + " yrs old";
+    
+    document.getElementById('resUS26').innerText = getAgeUS(2026) + " yrs old";
+    document.getElementById('resUS27').innerText = getAgeUS(2027) + " yrs old";
+
     document.getElementById('classResultArea').style.display = 'grid';
 }
 
@@ -157,32 +176,25 @@ async function convert() {
     const target = document.getElementById('toCurr').value;
     const display = document.getElementById('currVal');
     const area = document.getElementById('currResultArea');
-
     if(!amount) return;
     area.style.display = 'grid';
-    display.innerText = "Fetching live rate...";
-
+    display.innerText = "Fetching...";
     try {
-        // Fetch from Open Source Exchange Rate API (No Key required for limited use)
         const response = await fetch(`https://open.er-api.com/v6/latest/JPY`);
         const data = await response.json();
         const rate = data.rates[target];
-        
         if (rate) {
             const result = (amount * rate).toLocaleString(undefined, {minimumFractionDigits: 2});
             display.innerText = `${result} ${target}`;
             document.getElementById('currLabel').innerText = `Live Rate: 1 JPY = ${rate.toFixed(4)} ${target}`;
         }
-    } catch (error) {
-        // Fallback to static rates if API fails
-        const fallback = {USD:0.0066, EUR:0.0062, AUD:0.010, SGD:0.0089, TWD:0.21, HKD:0.052};
-        const res = (amount * fallback[target]).toLocaleString(undefined, {minimumFractionDigits: 2});
-        display.innerText = `${res} ${target} (Estimate)`;
-        document.getElementById('currLabel').innerText = "Converted Amount (Offline Mode)";
+    } catch (e) {
+        const fb = {USD:0.0066, EUR:0.0062, AUD:0.010, SGD:0.0089, TWD:0.21, HKD:0.052};
+        display.innerText = `${(amount * fb[target]).toFixed(2)} ${target} (Est)`;
     }
 }
 
-// --- Holiday & Calendar Engine ---
+// --- Holiday Engine ---
 function getHolidays(y) {
     let h = {}; const add = (m, d) => { h[`${m}-${d}`] = true; };
     const getNthMon = (m, n) => {
