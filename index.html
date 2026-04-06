@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Utility Dashboard v8</title>
+    <title>Global Utility Dashboard v9</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -73,6 +73,7 @@
         .res-sub-label { font-size: 0.75rem; color: #64748b; margin-bottom: 5px; text-transform: uppercase; display: block; }
         .res-value { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
         .curr-val { color: var(--accent); }
+        .divider { margin: 12px 0; border-top: 1px dashed #e2e8f0; }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         @media (max-width: 850px) { .calendar-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -102,15 +103,18 @@
                 <span class="res-main-label">Japan</span>
                 <span class="res-sub-label">April 2026 - Mar 2027</span>
                 <div id="resJP26" class="res-value">-</div>
-                <div style="margin-top:15px"></div>
+                <div class="divider"></div>
                 <span class="res-sub-label">April 2027 - Mar 2028</span>
                 <div id="resJP27" class="res-value">-</div>
             </div>
             <div class="res-card">
                 <span class="res-main-label">US</span>
+                <span class="res-sub-label">September 2025 - Aug 2026</span>
+                <div id="resUS25" class="res-value">-</div>
+                <div class="divider"></div>
                 <span class="res-sub-label">September 2026 - Aug 2027</span>
                 <div id="resUS26" class="res-value">-</div>
-                <div style="margin-top:15px"></div>
+                <div class="divider"></div>
                 <span class="res-sub-label">September 2027 - Aug 2028</span>
                 <div id="resUS27" class="res-value">-</div>
             </div>
@@ -161,9 +165,12 @@ function checkClass() {
     // US Calculation (Sept 1st to Aug 31st next year)
     const getAgeUS = (targetY) => (m < 9) ? (targetY - y) : (targetY - y - 1);
 
+    // Japan Output
     document.getElementById('resJP26').innerText = getAgeJP(2026) + " yrs old";
     document.getElementById('resJP27').innerText = getAgeJP(2027) + " yrs old";
     
+    // US Output (Added 2025)
+    document.getElementById('resUS25').innerText = getAgeUS(2025) + " yrs old";
     document.getElementById('resUS26').innerText = getAgeUS(2026) + " yrs old";
     document.getElementById('resUS27').innerText = getAgeUS(2027) + " yrs old";
 
